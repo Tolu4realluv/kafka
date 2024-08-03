@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: my-prometheus
+spec:
+  serviceMonitorSelector:
+    matchLabels:
+      app: kafka
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+  ruleSelector:
+    matchLabels:
+      prometheus: my-prometheus
+  alerting:
+    alertmanagers:
+      - name: alertmanager-main
+        namespace: monitoring
+        port: web
+  scrapeInterval: 30s
+  scrapeTimeout: 10s
+  externalLabels:
+    environment: production
+  additionalScrapeConfigs:
+    - job_name: 'kafka'
+      static_configs:
+        - targets:
+            - 'localhost:9092'
+            - 'localhost:9093'
+            # Add more Kafka broker targets as needed
+      metrics_path: '/metrics'
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: instance
+          regex: '(.*):9091'
+          replacement: '${1}'
